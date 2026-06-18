@@ -3,8 +3,10 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from db import init_db, create_chat, get_chats, delete_chat, add_message, get_messages
-from rag.retriever import retrieve
+from rag.retriever import retrieve, load_knowledge
 from llm import ask_llm
+from fastapi import UploadFile, File
+import shutil
 
 # =========================
 # 1. FastAPI 初始化
@@ -108,4 +110,24 @@ def api_add_message(chat_id: int, role: str, text: str):
 def api_get_messages(chat_id: int):
     return {
         "messages": get_messages(chat_id)
+    }
+@app.post("/upload")
+def upload_file(
+    file: UploadFile = File(...)
+):
+
+    with open(
+        "documents/knowledge.txt",
+        "wb"
+    ) as buffer:
+
+        shutil.copyfileobj(
+            file.file,
+            buffer
+        )
+
+    load_knowledge()
+
+    return {
+        "message": "上传成功，知识库已刷新"
     }
