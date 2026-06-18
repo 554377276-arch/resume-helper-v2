@@ -118,7 +118,7 @@ def upload_file(
 
     with open(
         "documents/knowledge.txt",
-        "wb"
+        "ab"
     ) as buffer:
 
         shutil.copyfileobj(
