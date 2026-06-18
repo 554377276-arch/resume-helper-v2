@@ -122,3 +122,34 @@ html, body {
     color: white;
     cursor: pointer;
 }
+.chat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px;
+    margin-bottom: 6px;
+    background: #343541;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.chat-item span {
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.chat-item button {
+    margin-left: 6px;
+    background: #555;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.chat-item.active {
+    background: #4a4b55;
+}

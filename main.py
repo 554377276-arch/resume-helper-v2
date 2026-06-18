@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-
+from db import init_db, create_chat, get_chats, delete_chat, add_message, get_messages
 from rag.retriever import retrieve
 from llm import ask_llm
 
@@ -10,7 +10,7 @@ from llm import ask_llm
 # 1. FastAPI 初始化
 # =========================
 app = FastAPI()
-
+init_db()
 # =========================
 # 2. 静态文件（CSS / JS）
 # =========================
@@ -37,7 +37,12 @@ def home(request: Request):
 # 5. RAG + LLM 问答接口
 # =========================
 @app.get("/rag-qa")
-def rag_qa(query: str, top_k: int = 2):
+def rag_qa(query: str,history: str = "", top_k: int = 2):
+    print("当前问题:")
+    print(query)
+
+    print("聊天历史:")
+    print(history)
 
     # 1. RAG 检索
     results = retrieve(query, top_k)
@@ -52,7 +57,7 @@ def rag_qa(query: str, top_k: int = 2):
     context = "\n".join([text for text, score in results])
 
     # 5. 调用大模型
-    answer = ask_llm(query, context, use_rag=use_rag)
+    answer = ask_llm(query, context, use_rag=use_rag, history=history)
 
     # 6. 返回 JSON
     return {
@@ -61,4 +66,46 @@ def rag_qa(query: str, top_k: int = 2):
         "best_score": best_score,
         "context": context,
         "answer": answer
+    }
+@app.get("/chats")
+def api_get_chats():
+    return {
+        "chats": get_chats()
+    }
+
+
+@app.post("/chats")
+def api_create_chat(title: str = "新对话"):
+    chat_id = create_chat(title)
+
+    return {
+        "id": chat_id,
+        "title": title
+    }
+
+
+@app.delete("/chats/{chat_id}")
+def api_delete_chat(chat_id: int):
+    delete_chat(chat_id)
+
+    return {
+        "message": "删除成功",
+        "id": chat_id
+    }
+@app.post("/chats/{chat_id}/messages")
+def api_add_message(chat_id: int, role: str, text: str):
+    add_message(chat_id, role, text)
+
+    return {
+        "message": "保存成功",
+        "chat_id": chat_id,
+        "role": role,
+        "text": text
+    }
+
+
+@app.get("/chats/{chat_id}/messages")
+def api_get_messages(chat_id: int):
+    return {
+        "messages": get_messages(chat_id)
     }
