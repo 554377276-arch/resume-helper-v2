@@ -1,14 +1,14 @@
 from sentence_transformers import SentenceTransformer
 import numpy as np
-
+import faiss
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 chunks = []
-chunk_vectors = []
-
+chunk_vectors = None
+index = None
 
 def load_knowledge():
-    global chunks, chunk_vectors
+    global chunks, chunk_vectors, index
 
     with open(
         "documents/knowledge.txt",
@@ -20,6 +20,15 @@ def load_knowledge():
     chunks = split_to_chunks(raw_text)
 
     chunk_vectors = model.encode(chunks)
+    chunk_vectors = np.array(chunk_vectors).astype("float32")
+
+    faiss.normalize_L2(chunk_vectors)
+
+    dimension = chunk_vectors.shape[1]
+
+    index = faiss.IndexFlatIP(dimension)
+
+    index.add(chunk_vectors)
 
     print("知识库已重新加载")
     print("当前chunk数量:", len(chunks))
@@ -37,23 +46,27 @@ def cosine_similarity(a, b):
 
 
 def retrieve(query, top_k=1):
-    query_vector = model.encode(query)
 
-    scores = []
+    query_vector = model.encode([query])
 
-    for i, chunk_vector in enumerate(chunk_vectors):
-        score = cosine_similarity(query_vector, chunk_vector)
+    query_vector = np.array(query_vector).astype("float32")
 
-        scores.append(
+    faiss.normalize_L2(query_vector)
+
+    scores, ids = index.search(query_vector, top_k)
+
+    results = []
+
+    for score, chunk_id in zip(scores[0], ids[0]):
+
+        results.append(
             (
-                chunks[i],
+                chunks[chunk_id],
                 float(score)
             )
         )
 
-    scores.sort(key=lambda x: x[1], reverse=True)
-
-    return scores[:top_k]
+    return results
 
 
 load_knowledge()
