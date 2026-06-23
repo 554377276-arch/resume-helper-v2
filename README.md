@@ -1,6 +1,6 @@
-# RAG智能知识库问答系统
+# 这是一个从 RAG 问答系统升级而来的基础 Agent 项目
 
-基于 FastAPI + DeepSeek + FAISS 构建的知识库问答系统。
+手写版基础 Agent 原型
 
 ## 功能
 
@@ -44,3 +44,5 @@ JavaScript
 pip install -r requirements.txt
 
 uvicorn main:app --reload
+
+api key需要自己在llm填写
