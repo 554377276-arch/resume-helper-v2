@@ -55,9 +55,7 @@ function createChatInDB(title, callback) {
             currentChatId = data.id;
             loadChatsFromDB();
 
-            if (callback) {
-                callback();
-            }
+            if (callback) callback();
         });
 }
 
@@ -79,21 +77,27 @@ function send() {
         currentChat.push({ role: "user", text: text });
         saveMessage("user", text);
         render();
+        console.log("发送给后端的history：", currentChat.slice(-6));
+        fetch("/agent", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                query: text,
+                history: currentChat.slice(-6)
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+    currentChat.push({
+        role: "ai",
+        text: `[${data.tool}] ${formatResult(data.result)}`
+    });
 
-        let history = JSON.stringify(currentChat);
-
-        fetch(`/rag-qa?query=${encodeURIComponent(text)}&history=${encodeURIComponent(history)}`)
-            .then(res => res.json())
-            .then(data => {
-                currentChat.push({
-                    role: "ai",
-                    text: data.answer
-                });
-
-                saveMessage("ai", data.answer);
-                render();
-                loadChatsFromDB();
-            });
+    saveMessage("ai", data.result);
+    render();
+});
 
         input.value = "";
         input.focus();
@@ -104,7 +108,11 @@ function send() {
     } else {
         realSend();
     }
-}
+}  // ⭐⭐⭐ 关键：必须关闭 send()
+
+// =====================
+// 下面是独立函数（不能在send里面）
+// =====================
 
 function newChat() {
     currentChat = [];
@@ -141,16 +149,19 @@ function deleteChat(chatId) {
         });
 }
 
+// Enter发送
 document.getElementById("input").addEventListener("keydown", function(event) {
     if (event.key === "Enter") {
         send();
     }
 });
 
+// 初始化
 loadChatsFromDB();
+
+// 上传文件
 document.getElementById("upload-form").addEventListener("submit", function(event) {
     event.preventDefault();
-    
 
     let fileInput = document.getElementById("file-input");
 
@@ -166,8 +177,25 @@ document.getElementById("upload-form").addEventListener("submit", function(event
         method: "POST",
         body: formData
     })
-        .then(res => res.json())
-        .then(data => {
-            alert(data.message);
-        });
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+    });
 });
+function formatResult(result) {
+
+    if (typeof result === "string") {
+        return result;
+    }
+
+    if (Array.isArray(result)) {
+        return result.map(item => {
+            if (Array.isArray(item)) {
+                return item[0];
+            }
+            return item;
+        }).join("\n");
+    }
+
+    return JSON.stringify(result);
+}

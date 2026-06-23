@@ -1,13 +1,14 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request,UploadFile, File
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from db import init_db, create_chat, get_chats, delete_chat, add_message, get_messages
 from rag.retriever import retrieve, load_knowledge
 from llm import ask_llm
-from fastapi import UploadFile, File
 import shutil
-
+from pydantic import BaseModel
+from agent.agent import agent
+from agent.tools import rag_tool, db_tool, llm_tool
 # =========================
 # 1. FastAPI 初始化
 # =========================
@@ -131,3 +132,24 @@ def upload_file(
     return {
         "message": "上传成功，知识库已刷新"
     }
+# ===== Agent请求模型 =====
+class AgentRequest(BaseModel):
+    query: str
+    history: list = []
+
+
+# ===== Agent接口（新增，不影响原有接口）=====
+@app.post("/agent")
+def run_agent(req: AgentRequest):
+
+    result = agent(req.query, req.history)
+
+    return {
+        "query": req.query,
+        "tool": result.get("tool"),
+        "result": result.get("result")
+    }
+
+@app.get("/test-agent")
+def test_agent(query: str):
+    return agent(query)
