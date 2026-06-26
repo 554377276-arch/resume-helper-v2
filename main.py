@@ -8,7 +8,9 @@ from llm import ask_llm
 import shutil
 from pydantic import BaseModel
 from agent.agent import agent
+from agent.langchain_agent import langchain_agent
 from agent.tools import rag_tool, db_tool, llm_tool
+
 # =========================
 # 1. FastAPI 初始化
 # =========================
@@ -153,3 +155,20 @@ def run_agent(req: AgentRequest):
 @app.get("/test-agent")
 def test_agent(query: str):
     return agent(query)
+# ===== LangChain Agent 接口（新增，不影响旧 Agent）=====
+@app.post("/langchain-agent")
+def run_langchain_agent(req: AgentRequest):
+
+    result = langchain_agent(req.query, req.history)
+
+    return {
+        "query": req.query,
+        "tool": result.get("tool"),
+        "result": result.get("result")
+    }
+
+
+@app.get("/test-langchain-agent")
+def test_langchain_agent(query: str):
+
+    return langchain_agent(query)

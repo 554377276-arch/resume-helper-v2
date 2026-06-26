@@ -1,8 +1,12 @@
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import faiss
-model = SentenceTransformer("all-MiniLM-L6-v2")
-
+import os
+os.environ["HF_HUB_OFFLINE"] = "1"
+model = SentenceTransformer(
+    "all-MiniLM-L6-v2",
+    local_files_only=True
+)
 chunks = []
 chunk_vectors = None
 index = None

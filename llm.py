@@ -1,8 +1,8 @@
 import json
 from openai import OpenAI
-
+import os
 client = OpenAI(
-    api_key="sk-d3f8c6497d4f474f9db286f4ca610c50",
+    api_key = os.getenv("DEEPSEEK_API_KEY"),
     base_url="https://api.deepseek.com"
 )
 

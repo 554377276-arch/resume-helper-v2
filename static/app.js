@@ -78,7 +78,7 @@ function send() {
         saveMessage("user", text);
         render();
         console.log("发送给后端的history：", currentChat.slice(-6));
-        fetch("/agent", {
+        fetch("/langchain-agent", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -92,7 +92,7 @@ function send() {
         .then(data => {
     currentChat.push({
         role: "ai",
-        text: `[${data.tool}] ${formatResult(data.result)}`
+        text: formatResult(data.result)
     });
 
     saveMessage("ai", data.result);
